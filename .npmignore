@@ -1,0 +1,16 @@
+src
+test
+tsconfig.*
+*.tsbuildinfo
+.travis.yml
+.github
+.prettierignore
+.vscode
+.idea/*
+**/*.spec.*
+coverage
+.nyc_output
+*.log
+node_modules
+lib
+.env
