@@ -20,6 +20,7 @@
     "@types/glob": "^7.2.0",
     "@types/jest": "^27.5.0",
     "@types/node": "^17.0.31",
+    "@types/semver": "^7.3.9",
     "@typescript-eslint/eslint-plugin": "^5.22.0",
     "@typescript-eslint/parser": "^5.22.0",
     "eslint": "^8.15.0",
@@ -39,7 +40,9 @@
     "@tinkoff/utils": "^2.2.1",
     "cli-table3": "^0.6.2",
     "glob": "^8.0.3",
+    "got": "^11.8.5",
     "pino": "^8.0.0",
-    "pino-pretty": "^8.0.0"
+    "pino-pretty": "^8.0.0",
+    "semver": "^7.3.7"
   }
 }

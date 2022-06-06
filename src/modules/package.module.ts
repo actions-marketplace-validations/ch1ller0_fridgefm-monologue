@@ -6,7 +6,7 @@ import glob from 'glob';
 import { CONFIG_SERVICE } from './config/config.module';
 import type { IPackageJson } from 'package-json-type';
 
-type LocalPackage = {
+export type LocalPackage = {
   path: string;
   packageJson: IPackageJson;
 };

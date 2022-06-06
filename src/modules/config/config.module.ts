@@ -7,7 +7,6 @@ type PossibleValues = string | boolean;
 type Config = {
   localPackagesDir: string;
   dryRun: boolean;
-  buildDir: string;
   npmRegistryUrl: string;
   npmAuthToken: string;
 };
@@ -94,18 +93,12 @@ export const ConfigModule = declareModule({
           value: configExternal.localPackagesDir ?? './*',
         }),
         dryRun: createVar({ value: configExternal.dryRun ?? true }),
-        buildDir: createVar({
-          value: configExternal.buildDir ?? '',
-          validation: (s) => (!s ? ['Missing property "buildDir" on config file'] : []),
-        }),
       }),
       inject: [CONFIG_EXTERNAL] as const,
     }),
     injectable({
       provide: CONFIG_EXTERNAL,
-      useValue: {
-        buildDir: './dist/', // @TODO this one changes
-      },
+      useValue: {},
     }),
   ],
 });

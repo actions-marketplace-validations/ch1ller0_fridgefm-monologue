@@ -12,9 +12,11 @@ import { RootModule } from './modules/root.module';
 import { RenderModule } from './modules/render.module';
 import { ConfigModule } from './modules/config/config.module';
 import { PackageModule } from './modules/package.module';
+import { RegistryModule } from './modules/registry/registry.module';
+import { SemverModule } from './modules/semver.module';
 import type { ContainerConfiguration } from '@fridgefm/inverter';
 
 export const containerConfig: ContainerConfiguration = {
-  modules: [RenderModule, ConfigModule, RootModule, PackageModule],
+  modules: [RenderModule, ConfigModule, RootModule, PackageModule, RegistryModule, SemverModule],
   providers: [],
 };
