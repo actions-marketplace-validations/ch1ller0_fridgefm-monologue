@@ -1,5 +1,5 @@
 import { createToken, declareModule, injectable } from '@fridgefm/inverter';
-import { CONFIG_SERVICE } from './config/config.module';
+import { PACKAGE_SERVICE } from './package.module';
 import { LOGGER } from './render.module';
 
 export const ROOT_FN_TOKEN = createToken<() => Promise<void>>('root:fn');
@@ -9,16 +9,17 @@ export const RootModule = declareModule({
   providers: [
     injectable({
       provide: ROOT_FN_TOKEN,
-      useFactory: (logger, configService) => async () => {
+      useFactory: (logger, packageService) => async () => {
         try {
-          const dryRun = configService.get('dryRun');
           console.log('starting cli...');
+          const localPackages = await packageService.getLocalPackages();
+          console.log('localP', localPackages);
         } catch (e) {
           logger.error(e);
           process.exit(1);
         }
       },
-      inject: [LOGGER, CONFIG_SERVICE] as const,
+      inject: [LOGGER, PACKAGE_SERVICE] as const,
     }),
   ],
 });

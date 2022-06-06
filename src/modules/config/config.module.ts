@@ -91,7 +91,7 @@ export const ConfigModule = declareModule({
           value: configExternal.npmRegistryUrl || 'https://registry.npmjs.org/',
         }),
         localPackagesDir: createVar({
-          value: configExternal.localPackagesDir ?? './',
+          value: configExternal.localPackagesDir ?? './*',
         }),
         dryRun: createVar({ value: configExternal.dryRun ?? true }),
         buildDir: createVar({

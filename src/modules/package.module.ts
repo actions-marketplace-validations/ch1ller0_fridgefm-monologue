@@ -36,7 +36,7 @@ export const PackageModule = declareModule({
 
             const filteredPaths = foundFiles.filter((fullpath) => {
               const { name, ext } = parse(fullpath);
-              return name === 'package' && ext === 'json';
+              return name === 'package' && ext === '.json';
             });
 
             return Promise.all(
