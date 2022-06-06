@@ -10,7 +10,7 @@
 // import { StrategiesModule } from './strategies/strategies.module';
 import { RootModule } from './modules/root.module';
 import { RenderModule } from './modules/render.module';
-import { ConfigModule } from './modules/config.module';
+import { ConfigModule } from './modules/config/config.module';
 import type { ContainerConfiguration } from '@fridgefm/inverter';
 
 export const containerConfig: ContainerConfiguration = {

@@ -1,5 +1,8 @@
 import { createToken, declareModule, injectable } from '@fridgefm/inverter';
-import { LOGGER, RENDER_SERVICE } from './render.module';
+import { LOGGER, RENDER_SERVICE } from '../render.module';
+import { maskString } from './utils';
+
+type PossibleValues = string | boolean;
 
 type Config = {
   localPackagesDir: string;
@@ -9,39 +12,29 @@ type Config = {
   npmAuthToken: string;
 };
 
-type Variable<T extends keyof Config> = {
-  value: Config[T];
+type Variable<V extends PossibleValues> = {
+  value: V;
   private?: boolean;
-  validation?: (value: Config[T]) => string[];
+  validation?: (value: V) => string[];
 };
 
 type Mapper = {
-  [P in keyof Config]: Required<Variable<P>>;
+  readonly [P in keyof Config]: Required<Variable<Config[P]>>;
 };
 
-type ConfigService = {
-  get: <S extends keyof Mapper>(s: S) => Mapper[S];
-};
-
-const maskString = (s: string) => {
-  const len = s.length;
-  const letted = Math.floor(len / 3);
-  const fixed = letted > 8 ? 8 : letted;
-  const arr = (l: number) => new Array(l).fill('*').join('');
-
-  return `${arr(len - fixed)}${fixed >= 1 ? s.slice(-fixed) : arr(fixed)}`;
-};
-
-export const CONFIG_SERVICE = createToken<ConfigService>('config:service');
+export const CONFIG_SERVICE = createToken<{
+  get: <S extends keyof Mapper>(s: S) => Mapper[S]['value'];
+}>('config:service');
 export const CONFIG_MAPPER = createToken<Mapper>('config:mapper');
 export const CONFIG_EXTERNAL = createToken<Partial<Config>>('config:external');
 
-const createVar = <V extends keyof Config>(args: Variable<V>) =>
+const createVar = <V extends PossibleValues>(args: Variable<V>) =>
   ({
     value: args.value,
     private: args.private || false,
-    validation: args.validation || (() => [] as string[]),
-  } as const);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    validation: args.validation || ((_: V) => [] as string[]),
+  } as Required<Variable<V>>);
 
 export const ConfigModule = declareModule({
   name: 'ConfigModule',
@@ -75,12 +68,12 @@ export const ConfigModule = declareModule({
         }
 
         return {
-          get: <S extends keyof Mapper>(key: S): Mapper[S] => {
+          get: <S extends keyof Mapper>(key: S) => {
             const variable = configMapper[key];
             if (variable.private) {
               throw new Error('Trying to get private variable');
             }
-            return variable;
+            return variable.value;
           },
         };
       },
@@ -98,13 +91,11 @@ export const ConfigModule = declareModule({
           value: configExternal.npmRegistryUrl || 'https://registry.npmjs.org/',
         }),
         localPackagesDir: createVar({
-          value: configExternal.localPackagesDir || process.cwd(),
+          value: configExternal.localPackagesDir ?? './',
         }),
-        dryRun: createVar({
-          value: true,
-        }),
+        dryRun: createVar({ value: configExternal.dryRun ?? true }),
         buildDir: createVar({
-          value: configExternal.buildDir || '',
+          value: configExternal.buildDir ?? '',
           validation: (s) => (!s ? ['Missing property "buildDir" on config file'] : []),
         }),
       }),

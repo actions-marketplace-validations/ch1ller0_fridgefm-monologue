@@ -1,5 +1,5 @@
 import { createToken, declareModule, injectable } from '@fridgefm/inverter';
-import { CONFIG_SERVICE } from './config.module';
+import { CONFIG_SERVICE } from './config/config.module';
 import { LOGGER } from './render.module';
 
 export const ROOT_FN_TOKEN = createToken<() => Promise<void>>('root:fn');
@@ -11,7 +11,7 @@ export const RootModule = declareModule({
       provide: ROOT_FN_TOKEN,
       useFactory: (logger, configService) => async () => {
         try {
-          configService.get('dryRun');
+          const dryRun = configService.get('dryRun');
           console.log('starting cli...');
         } catch (e) {
           logger.error(e);

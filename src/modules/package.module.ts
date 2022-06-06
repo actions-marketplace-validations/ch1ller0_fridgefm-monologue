@@ -3,7 +3,7 @@ import { promisify } from 'util';
 import { readFile } from 'fs';
 import { createToken, declareModule, injectable } from '@fridgefm/inverter';
 import glob from 'glob';
-import { CONFIG_SERVICE } from './config.module';
+import { CONFIG_SERVICE } from './config/config.module';
 import type { IPackageJson } from 'package-json-type';
 
 type LocalPackage = {
