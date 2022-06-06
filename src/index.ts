@@ -1,20 +1,6 @@
-/* eslint-disable no-console */
-import type { CurriedSum } from './types/main';
+#!/usr/bin/env node
+import { declareContainer } from '@fridgefm/inverter';
+import { containerConfig } from './container';
+import { ROOT_FN_TOKEN } from './modules/root.module';
 
-const curriedSum = (num: number): CurriedSum => {
-  const func = (nextnum?: number) => {
-    if (nextnum !== undefined) {
-      return curriedSum(num + nextnum);
-    }
-    return num;
-  };
-
-  return func as CurriedSum;
-};
-
-const add16 = curriedSum(16);
-
-console.log(add16());
-console.log(add16(10)());
-
-export { curriedSum };
+declareContainer(containerConfig).get(ROOT_FN_TOKEN)();

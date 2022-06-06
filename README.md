@@ -1,5 +1,9 @@
-# Node + Typescript Boilerplate
-A simple template for a library with built-in ts, jest, eslint, prettier support
+# Autopub
+A simple automation of your npm package publications
+
+## Features
+- [x] Single repo
+- [] Monorepo
 
 ## Installation
 On github you may just click `Use this template` button or do the following
