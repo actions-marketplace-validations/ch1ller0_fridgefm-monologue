@@ -4,6 +4,7 @@ import { PACKAGE_SERVICE } from './package.module';
 import { REGISTRY_SERVICE } from './registry/registry.module';
 import { LOGGER, RENDER_SERVICE } from './render.module';
 import { SEMVER } from './semver.module';
+import { GIT } from './git.module';
 import type { SemverString } from './registry/registry.types';
 
 export const ROOT_FN_TOKEN = createToken<() => Promise<void>>('root:fn');
@@ -13,8 +14,9 @@ export const RootModule = declareModule({
   providers: [
     injectable({
       provide: ROOT_FN_TOKEN,
-      useFactory: (logger, packageService, registryService, semver, render) => async () => {
+      useFactory: (logger, packageService, registryService, semver, render, git) => async () => {
         logger.info('CLI started...');
+        const logs = await git.log();
 
         try {
           const localPackages = await packageService.getLocalPackages();
@@ -29,20 +31,27 @@ export const RootModule = declareModule({
             (acc, cur) => (semver.compare(cur.remote.version, acc) > 0 ? cur.remote.version : acc),
             '0.0.0' as SemverString,
           );
+
           const releaseTypeTodo = 'minor'; // @TODO determine release-type somehow
           const releases = localRemotes.map((s) => {
-            const skipped = s.local.packageJson.private ? 'package/private' : undefined;
+            const skipped = () => {
+              if (!!s.local.packageJson.private) return 'package/private';
+              if (s.remote.gitHead === process.env.GITHUB_SHA) return 'remote/same-gh-sha';
+              if (s.remote.gitHead === logs.latest?.hash) return 'remote/same-log-sha';
+              return undefined;
+            };
+
             const reason = 'direct-change'; // @TODO add reason
             return {
               local: s.local,
               remote: s.remote,
               name: s.remote.name,
               current: s.remote.version,
-              next: skipped
+              next: skipped()
                 ? s.remote.version
                 : semver.increase(highestCurrentVersion, releaseTypeTodo),
               reason,
-              skipped: skipped || 'no',
+              skipped: skipped() || 'no',
             };
           });
           render.table(releases.map(omit(['local', 'remote'])));
@@ -57,7 +66,7 @@ export const RootModule = declareModule({
           process.exit(1);
         }
       },
-      inject: [LOGGER, PACKAGE_SERVICE, REGISTRY_SERVICE, SEMVER, RENDER_SERVICE] as const,
+      inject: [LOGGER, PACKAGE_SERVICE, REGISTRY_SERVICE, SEMVER, RENDER_SERVICE, GIT] as const,
     }),
   ],
 });
