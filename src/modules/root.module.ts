@@ -29,10 +29,10 @@ export const RootModule = declareModule({
             (acc, cur) => (semver.compare(cur.remote.version, acc) > 0 ? cur.remote.version : acc),
             '0.0.0' as SemverString,
           );
-          const releaseTypeTodo = 'minor';
+          const releaseTypeTodo = 'minor'; // @TODO determine release-type somehow
           const releases = localRemotes.map((s) => {
             const skipped = s.local.packageJson.private ? 'package/private' : undefined;
-            const reason = 'direct-change'; // @TODO add reason,
+            const reason = 'direct-change'; // @TODO add reason
             return {
               local: s.local,
               remote: s.remote,

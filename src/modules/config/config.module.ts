@@ -1,4 +1,7 @@
-import { createToken, declareModule, injectable } from '@fridgefm/inverter';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { createToken, declareModule, injectable, modifyToken } from '@fridgefm/inverter';
+import merge from '@tinkoff/utils/object/merge';
 import { LOGGER, RENDER_SERVICE } from '../render.module';
 import { maskString } from './utils';
 
@@ -25,7 +28,7 @@ export const CONFIG_SERVICE = createToken<{
   get: <S extends keyof Mapper>(s: S) => Mapper[S]['value'];
 }>('config:service');
 export const CONFIG_MAPPER = createToken<Mapper>('config:mapper');
-export const CONFIG_EXTERNAL = createToken<Partial<Config>>('config:external');
+export const CONFIG_EXTERNAL = modifyToken.multi(createToken<Partial<Config>>('config:external'));
 
 const createVar = <V extends PossibleValues>(args: Variable<V>) =>
   ({
@@ -80,25 +83,51 @@ export const ConfigModule = declareModule({
     }),
     injectable({
       provide: CONFIG_MAPPER,
-      useFactory: (configExternal) => ({
-        npmAuthToken: createVar({
-          value: process.env.NPM_AUTH_TOKEN || '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', // @TODO rename fake
-          validation: (s) => (!s ? ['Env variable "NPM_AUTH_TOKEN" should be passed'] : []),
-          private: true,
-        }),
-        npmRegistryUrl: createVar({
-          value: configExternal.npmRegistryUrl || 'https://registry.npmjs.org/',
-        }),
-        localPackagesDir: createVar({
-          value: configExternal.localPackagesDir ?? './*',
-        }),
-        dryRun: createVar({ value: configExternal.dryRun ?? true }),
-      }),
+      useFactory: (externalConfigs) => {
+        const { npmRegistryUrl, localPackagesDir, dryRun, npmAuthToken } = merge(
+          ...externalConfigs,
+        );
+
+        return {
+          npmAuthToken: createVar({
+            value: npmAuthToken || '',
+            validation: (s) => (!s ? ['Config for "npmAuthToken" should be set'] : []),
+            private: true,
+          }),
+          npmRegistryUrl: createVar({
+            value: npmRegistryUrl ?? 'https://registry.npmjs.org/',
+          }),
+          localPackagesDir: createVar({
+            value: localPackagesDir ?? './*',
+          }),
+          dryRun: createVar({ value: dryRun ?? true }),
+        };
+      },
       inject: [CONFIG_EXTERNAL] as const,
     }),
     injectable({
       provide: CONFIG_EXTERNAL,
-      useValue: {},
+      useFactory: () => {
+        const shared = { npmAuthToken: process.env.NAPM_AUTH_TOKEN };
+        try {
+          const fileContents = readFileSync(resolve(process.cwd(), '.autopub.json'), {
+            encoding: 'utf-8',
+          });
+          return { ...shared, ...JSON.parse(fileContents) };
+        } catch (e) {
+          // @ts-ignore
+          if (e.code === 'ENOENT') return shared;
+          throw e;
+        }
+      },
     }),
   ],
+  extend: {
+    forRoot: (config: Partial<Config>) => [
+      injectable({
+        provide: CONFIG_EXTERNAL,
+        useValue: config,
+      }),
+    ],
+  },
 });
