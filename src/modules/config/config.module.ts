@@ -108,9 +108,9 @@ export const ConfigModule = declareModule({
     injectable({
       provide: CONFIG_EXTERNAL,
       useFactory: () => {
-        const shared = { npmAuthToken: process.env.NAPM_AUTH_TOKEN };
+        const shared = { npmAuthToken: process.env.NPM_AUTH_TOKEN };
         try {
-          const fileContents = readFileSync(resolve(process.cwd(), '.autopub.json'), {
+          const fileContents = readFileSync(resolve(process.cwd(), '.monologue.json'), {
             encoding: 'utf-8',
           });
           return { ...shared, ...JSON.parse(fileContents) };
