@@ -1,4 +1,4 @@
-import { createToken, declareModule, injectable } from '@fridgefm/inverter';
+import { createToken, createModule, injectable } from '@fridgefm/inverter';
 import pino, { type Logger } from 'pino';
 import Table from 'cli-table3';
 import pinoPretty from 'pino-pretty';
@@ -7,18 +7,18 @@ type RenderService = {
   table: (data: Record<string, string>[] | Record<string, string>) => void;
 };
 
-export const LOGGER = createToken<Logger>('render:logger');
-export const RENDER_SERVICE = createToken<RenderService>('render:service');
+const LOGGER = createToken<Logger>('render:logger');
+const RENDER = createToken<RenderService>('render:service');
 
-export const RenderModule = declareModule({
-  name: 'RenderModule',
+export const LoggerModule = createModule({
+  name: 'LoggerModule',
   providers: [
     injectable({
       provide: LOGGER,
       useValue: pino(pinoPretty({ colorize: true })),
     }),
     injectable({
-      provide: RENDER_SERVICE,
+      provide: RENDER,
       useValue: {
         table: (data) => {
           if (Array.isArray(data)) {
@@ -58,4 +58,8 @@ export const RenderModule = declareModule({
       },
     }),
   ],
+  exports: {
+    LOGGER,
+    RENDER,
+  },
 });

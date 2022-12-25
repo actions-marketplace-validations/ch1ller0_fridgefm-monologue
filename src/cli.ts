@@ -1,33 +1,23 @@
 #!/usr/bin/env node
 
-import { Command } from 'commander';
-import { declareContainer } from '@fridgefm/inverter';
-import { containerConfig } from './container';
-import { ConfigModule } from './modules/config/config.module';
-import { ROOT_FN_TOKEN } from './modules/root.module';
+import { createContainer } from '@fridgefm/inverter';
+import { CliModule } from './cli/cli.module';
+import { LoggerModule } from './logger/logger.module';
+import { SemverModule } from './semver/semver.module';
+import { GitModule } from './git/git.module';
+import { publishCommand } from './commands/publish.command';
+const { CLI_ROOT } = CliModule.exports;
 
-try {
-  const program = new Command('autopub');
-  const json = require('../package.json');
+/**
+ * This container includes only packages that are
+ * not configurable by commands and are singletons
+ */
+export const baseContainer = createContainer({
+  modules: [CliModule, LoggerModule, SemverModule, GitModule],
+  providers: [publishCommand],
+});
 
-  program.name('monologue').description(json.description).version(json.version);
-
-  program
-    .command('publish')
-    .description('Publish local packages to remote registry')
-    .option('--npm-auth-token <npmAuthToken>', 'token for npm registry')
-    .option('--npm-registry-url <npmRegistryUrl>', 'url for npm registry')
-    .option('--dry-run', 'should not execute the actual publish')
-    .action((options) => {
-      declareContainer({
-        ...containerConfig,
-        modules: containerConfig.modules?.concat([ConfigModule.forRoot(options)]),
-      }).get(ROOT_FN_TOKEN)();
-    });
-
-  program.parse(process.argv);
-} catch (e) {
-  // eslint-disable-next-line no-console
+baseContainer.get(CLI_ROOT).catch((e) => {
   console.error(e);
   process.exit(1);
-}
+});

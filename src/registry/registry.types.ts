@@ -5,11 +5,10 @@ type NpmUser = { name: string; email: string };
 export type NpmResponse = {
   name: string;
   version: SemverString;
-  description: string;
-  license: string;
-  gitHead: string;
-  maintainers: NpmUser[];
-  dist: {
+  description?: string;
+  license?: string;
+  maintainers?: NpmUser[];
+  dist?: {
     integrity: string;
     shasum: string;
     tarball: string;
@@ -17,6 +16,7 @@ export type NpmResponse = {
     unpackedSize: number;
     'npm-signature': string;
   };
-  _npmUser: NpmUser;
+  gitHead?: string;
+  _npmUser?: NpmUser;
   _id: string;
 };

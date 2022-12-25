@@ -1,24 +1,24 @@
-import { injectable, createToken, declareModule } from '@fridgefm/inverter';
+import { injectable, createToken, createModule } from '@fridgefm/inverter';
 import { inc, compare } from 'semver';
-import type { SemverString } from './registry/registry.types';
+import type { SemverString } from '../registry/registry.types';
 
-type ReleaseType = 'major' | 'minor' | 'patch';
+export type ReleaseType = 'major' | 'minor' | 'patch';
 
 type SemverService = {
   increase: (version: SemverString, releaseType: ReleaseType) => SemverString;
-  compare: (a: SemverString, b: SemverString) => number;
+  compare: typeof compare;
 };
 
-export const SEMVER = createToken<SemverService>('semver:service');
+const SEMVER = createToken<SemverService>('semver:service');
 
-export const SemverModule = declareModule({
+export const SemverModule = createModule({
   name: 'SemverModule',
   providers: [
     injectable({
       provide: SEMVER,
       useValue: {
         increase: (version, releaseType) => {
-          // in terms of versions starting at 0 major release is actually a position for minor
+          // in terms of versions, starting at 0 major release is actually a position for minor
           if (version.startsWith('0')) {
             return inc(
               version,
@@ -37,4 +37,5 @@ export const SemverModule = declareModule({
       },
     }),
   ],
+  exports: { SEMVER },
 });

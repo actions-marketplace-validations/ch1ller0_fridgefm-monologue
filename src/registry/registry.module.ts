@@ -1,41 +1,48 @@
 import { promisify } from 'node:util';
 import { writeFile } from 'node:fs/promises';
 import { exec } from 'node:child_process';
-import { createToken, declareModule, injectable } from '@fridgefm/inverter';
+import { createToken, createModule, injectable } from '@fridgefm/inverter';
 import got from 'got';
 import clone from '@tinkoff/utils/clone';
-import { CONFIG_SERVICE } from '../config/config.module';
-import { LOGGER, RENDER_SERVICE } from '../render.module';
+import { ConfigModule } from '../config/config.module';
+import { LoggerModule } from '../logger/logger.module';
 import type { NpmResponse, SemverString } from './registry.types';
-import type { LocalPackage } from '../package.module';
+import type { LocalPackage } from '../package/package.module';
 
-export const REGISTRY_SERVICE = createToken<{
-  packageInfo: (name: string) => Promise<NpmResponse>;
+const REGISTRY = createToken<{
+  packageInfo: (name: string) => Promise<NpmResponse | undefined>;
   publishPackage: (pack: LocalPackage, nextVersion: SemverString) => Promise<void>;
 }>('registry:service');
 
-export const RegistryModule = declareModule({
+const { CONFIG_SERVICE, ENV_VALIDATE } = ConfigModule.exports;
+const { LOGGER } = LoggerModule.exports;
+
+export const RegistryModule = createModule({
   name: 'RegistryModule',
   providers: [
     injectable({
-      provide: REGISTRY_SERVICE,
+      provide: REGISTRY,
       useFactory: (logger, configService) => {
-        const npmRegistryUrl = configService.get('npmRegistryUrl');
-        const dryRun = configService.get('dryRun');
+        const npmRegistryUrl = configService.getOrThrow<string>('npmRegistryUrl');
+        const dryRun = configService.getOrThrow<boolean>('dryRun');
 
         return {
-          packageInfo: (packageName) =>
-            got(`${npmRegistryUrl}${packageName}/latest`)
+          packageInfo: (packageName) => {
+            const fullUrl = `${npmRegistryUrl}${packageName}/latest`;
+            logger.info(`Requesting: ${fullUrl}`);
+
+            return got(fullUrl, { timeout: 5000 })
               .json<NpmResponse>()
               .catch((e) => {
                 if (e.message.includes('Response code 404')) {
-                  logger.error(
+                  logger.warn(
                     `Package "${packageName}" not found in registry, has it been ever released?`,
                   );
+                  return undefined;
                 }
-
                 throw e;
-              }),
+              });
+          },
           publishPackage: async (pack: LocalPackage, nextVersion: SemverString) => {
             const { path, packageJson } = pack;
             const modifiedJson = clone(packageJson);
@@ -51,7 +58,15 @@ export const RegistryModule = declareModule({
           },
         };
       },
-      inject: [LOGGER, CONFIG_SERVICE, RENDER_SERVICE] as const,
+      inject: [LOGGER, CONFIG_SERVICE] as const,
+    }),
+    injectable({
+      provide: ENV_VALIDATE,
+      useValue: (z) => ({
+        dryRun: z.boolean().default(true), // @TODO change to false when ready
+        npmRegistryUrl: z.string().url().endsWith('/').default('https://registry.npmjs.org/'),
+      }),
     }),
   ],
+  exports: { REGISTRY },
 });
